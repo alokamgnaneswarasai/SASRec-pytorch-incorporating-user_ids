@@ -1,4 +1,4 @@
-modified based on [paper author's tensorflow implementation](https://github.com/kang205/SASRec), switching to PyTorch(v1.6) for simplicity, fixed issues like positional embedding usage etc. (making it harder to overfit, except for that, in recsys, personalization=overfitting sometimes)
+modified based on [paper author's tensorflow implementation](https://github.com/kang205/SASRec), switching to PyTorch(v1.6) for simplicity, fixed issues like positional embedding usage etc. (making it harder to overfit, except for that, in recsys, personalization=overfitting sometimes). This approach also incorporates user_ids into the model architetcure.
 
 to train:
 
@@ -19,7 +19,7 @@ output for each run would be slightly random, as negative samples are randomly s
 1st run - test (NDCG@10: 0.5897, HR@10: 0.8190)
 2nd run - test (NDCG@10: 0.5918, HR@10: 0.8225)
 ```
-
+<!-- 
 pls check paper author's [repo](https://github.com/kang205/SASRec) for detailed intro and more complete README, and here's the paper bib FYI :)
 
 ```
@@ -31,8 +31,8 @@ pls check paper author's [repo](https://github.com/kang205/SASRec) for detailed 
   year={2018},
   organization={IEEE}
 }
-```
-
+``` -->
+<!-- 
 I see a dozen of citations of the repo recently🫰, here's the repo bib if needed.
 ```
 @software{Huang_SASRec_pytorch,
@@ -41,4 +41,4 @@ title = {PyTorch implementation for SASRec},
 url = {https://github.com/pmixer/SASRec.pytorch},
 year={2020}
 }
-```
+``` -->

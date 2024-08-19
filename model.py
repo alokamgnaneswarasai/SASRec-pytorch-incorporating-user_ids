@@ -65,6 +65,16 @@ class SASRec(torch.nn.Module):
             # self.neg_sigmoid = torch.nn.Sigmoid()
 
     def log2feats(self, log_seqs,user_ids): # TODO: fp64 and int64 as default in python, trim?
+        
+        # log_seqs = torch.tensor(log_seqs, dtype=torch.long, device=self.dev)
+        # user_ids = torch.tensor(user_ids, dtype=torch.long, device=self.dev).unsqueeze(1)  # (U, 1)
+
+        # log_seqs = torch.cat((user_ids, log_seqs), dim=1)  # (U, T+1)
+        
+        # seqs = self.item_emb(log_seqs) # (U, T+1, C)
+
+        # above was added by me to include user_ids in the log_seqs where user_ids are the first element in the sequence
+        
         seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
         seqs *= self.item_emb.embedding_dim ** 0.5
         poss = np.tile(np.arange(1, log_seqs.shape[1] + 1), [log_seqs.shape[0], 1])
@@ -102,6 +112,9 @@ class SASRec(torch.nn.Module):
         
         
         log_feats = self.log2feats(log_seqs,user_ids) 
+        
+        # skip the first item in the sequence, as it is the user_id
+        # log_feats = log_feats[:, 1:, :] # commented by me (U,T+1,C) -> (U,T,C)
 
         pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
         neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))

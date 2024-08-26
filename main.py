@@ -19,7 +19,7 @@ parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--maxlen', default=200, type=int)
 parser.add_argument('--hidden_units', default=50, type=int)
 parser.add_argument('--num_blocks', default=2, type=int)
-parser.add_argument('--num_epochs', default=1000, type=int)
+parser.add_argument('--num_epochs', default=100, type=int)
 parser.add_argument('--num_heads', default=1, type=int)
 parser.add_argument('--dropout_rate', default=0.2, type=float)
 parser.add_argument('--l2_emb', default=0.0, type=float)
@@ -54,6 +54,9 @@ if __name__ == '__main__':
     
     sampler = WarpSampler(user_train, usernum, itemnum, batch_size=args.batch_size, maxlen=args.maxlen, n_workers=3)
     model = SASRec(usernum, itemnum, args).to(args.device) # no ReLU activation in original SASRec implementation?
+    
+    user_embedding_matrix = model.user_emb.weight
+    torch.save(user_embedding_matrix,f'Embeddings/user_embeddings.pth')
     
     for name, param in model.named_parameters():
         try:

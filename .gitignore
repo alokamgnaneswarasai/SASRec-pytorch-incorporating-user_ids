@@ -4,3 +4,8 @@ __pycache__/
 
 # Avoid .pth files
 *.pth
+*.npy
+
+# Also ignore  data folder
+data/
+

@@ -146,3 +146,69 @@ class SASRec(torch.nn.Module):
         # preds = self.pos_sigmoid(logits) # rank same item list for different users
 
         return logits # preds # (U, I)
+
+
+class GRURec(torch.nn.Module):
+    
+    def __init__(self, user_num, item_num, args):
+        super(GRURec, self).__init__()
+
+        self.user_num = user_num
+        self.item_num = item_num
+        self.dev = args.device
+
+        self.user_emb = torch.nn.Embedding(self.user_num+1, args.hidden_units, padding_idx=0)
+        self.item_emb = torch.nn.Embedding(self.item_num+1, args.hidden_units, padding_idx=0)
+        self.pos_emb = torch.nn.Embedding(args.maxlen+1, args.hidden_units, padding_idx=0)
+        self.emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
+
+        self.gru_layers = torch.nn.ModuleList()
+        self.layernorms = torch.nn.ModuleList()
+        
+        for _ in range(args.num_blocks):
+            new_gru_layer = torch.nn.GRU(args.hidden_units, args.hidden_units, batch_first=True)
+            self.gru_layers.append(new_gru_layer)
+            
+            new_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
+            self.layernorms.append(new_layernorm)
+            
+        self.last_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
+        
+    def log2feats(self, log_seqs,user_ids):
+        seqs = self.item_emb(torch.LongTensor(log_seqs).to(self.dev))
+        seqs *= self.item_emb.embedding_dim ** 0.5
+        poss = np.tile(np.arange(1, log_seqs.shape[1] + 1), [log_seqs.shape[0], 1])
+        poss *= (log_seqs != 0)
+        seqs += self.pos_emb(torch.LongTensor(poss).to(self.dev))
+        user_embs = self.user_emb(torch.LongTensor(user_ids).to(self.dev))
+        seqs += user_embs.unsqueeze(1)
+        seqs = self.emb_dropout(seqs)
+        
+        for i in range(len(self.gru_layers)):
+            seqs, _ = self.gru_layers[i](seqs)
+            seqs = self.layernorms[i](seqs)
+            
+        log_feats = self.last_layernorm(seqs)
+        return log_feats
+    
+    def forward(self, user_ids, log_seqs, pos_seqs, neg_seqs):
+        log_feats = self.log2feats(log_seqs,user_ids)
+        
+        pos_embs = self.item_emb(torch.LongTensor(pos_seqs).to(self.dev))
+        neg_embs = self.item_emb(torch.LongTensor(neg_seqs).to(self.dev))
+
+        pos_logits = (log_feats * pos_embs).sum(dim=-1)
+        neg_logits = (log_feats * neg_embs).sum(dim=-1)
+
+        return pos_logits, neg_logits
+    
+    def predict(self, user_ids, log_seqs, item_indices):
+        log_feats = self.log2feats(log_seqs,user_ids)
+        final_feat = log_feats[:, -1, :]
+        
+        item_embs = self.item_emb(torch.LongTensor(item_indices).to(self.dev))
+        logits = item_embs.matmul(final_feat.unsqueeze(-1)).squeeze(-1)
+        return logits # (U, I) where I is the number of items in the item_indices list
+    
+    
+    

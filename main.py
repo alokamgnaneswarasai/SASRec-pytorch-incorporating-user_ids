@@ -3,7 +3,7 @@ import time
 import torch
 import argparse
 
-from model import SASRec,GRURec
+from model import SASRec,GRURec,LMURec
 from utils import *
 
 def str2bool(s):
@@ -55,6 +55,7 @@ if __name__ == '__main__':
     sampler = WarpSampler(user_train, usernum, itemnum, batch_size=args.batch_size, maxlen=args.maxlen, n_workers=3)
     # model = SASRec(usernum, itemnum, args).to(args.device) # no ReLU activation in original SASRec implementation?
     model = GRURec(usernum, itemnum, args).to(args.device)
+    # model = LMURec(usernum, itemnum, args).to(args.device)
     
     
     user_embedding_matrix = model.user_emb.weight

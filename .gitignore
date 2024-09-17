@@ -5,6 +5,8 @@ __pycache__/
 # Avoid .pth files
 *.pth
 *.npy
+*.csv
+*.txt
 
 # Also ignore  data folder
 data/

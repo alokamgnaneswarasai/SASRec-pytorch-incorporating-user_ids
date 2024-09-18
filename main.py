@@ -2,7 +2,7 @@ import os
 import time
 import torch
 import argparse
-
+import matplotlib.pyplot as plt
 from model import SASRec,GRURec,LMURec
 from utils import *
 
@@ -33,6 +33,29 @@ if not os.path.isdir(args.dataset + '_' + args.train_dir):
 with open(os.path.join(args.dataset + '_' + args.train_dir, 'args.txt'), 'w') as f:
     f.write('\n'.join([str(k) + ',' + str(v) for k, v in sorted(vars(args).items(), key=lambda x: x[0])]))
 f.close()
+
+
+def plot_curves(train_losses,val_ndcg_list,val_hr_list,test_ndcg_list,test_hr_list):
+    # Plotting the training loss
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label='Training loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training loss')
+    plt.legend()
+    plt.savefig(f'plots/{args.dataset}_training_loss.png')
+
+    # Plotting the validation and test metrics (NDCG@10 and HR@10)
+    plt.figure(figsize=(10, 5))
+    plt.plot(val_ndcg_list, label='Validation NDCG@10',marker='o')
+    plt.plot(val_hr_list, label='Validation HR@10',marker='o')
+    plt.plot(test_ndcg_list, label='Test NDCG@10',marker='x')
+    plt.plot(test_hr_list, label='Test HR@10',marker='x')
+    plt.xlabel('Epochs')
+    plt.ylabel('Metrics')
+    plt.title('Validation and Test Metrics')
+    plt.legend()
+    plt.savefig(f'plots/{args.dataset}_metrics.png')
 
 if __name__ == '__main__':
 
@@ -102,6 +125,12 @@ if __name__ == '__main__':
     best_test_ndcg, best_test_hr = 0.0, 0.0
     T = 0.0
     t0 = time.time()
+    
+    # Lists to track losses and metrics for plotting
+    epoch_losses = []
+    val_ndcg_list,val_hr_list = [],[]
+    test_ndcg_list,test_hr_list = [],[]
+    
     for epoch in range(epoch_start_idx, args.num_epochs + 1):
         if args.inference_only: break # just to decrease identition
         for step in range(num_batch): # tqdm(range(num_batch), total=num_batch, ncols=70, leave=False, unit='b'):
@@ -118,7 +147,9 @@ if __name__ == '__main__':
             loss.backward()
             adam_optimizer.step()
             print("loss in epoch {} iteration {}: {}".format(epoch, step, loss.item())) # expected 0.4~0.6 after init few epochs
-
+            
+            
+        epoch_losses.append(loss.item())  # added for plotting
         if epoch % 20 == 0:
             model.eval()
             t1 = time.time() - t0
@@ -128,6 +159,14 @@ if __name__ == '__main__':
             t_valid = evaluate_valid(model, dataset, args)
             print('epoch:%d, time: %f(s), valid (NDCG@10: %.4f, HR@10: %.4f), test (NDCG@10: %.4f, HR@10: %.4f)'
                     % (epoch, T, t_valid[0], t_valid[1], t_test[0], t_test[1]))
+            
+            val_ndcg_list.append(t_valid[0])
+            val_hr_list.append(t_valid[1])
+            test_ndcg_list.append(t_test[0])
+            test_hr_list.append(t_test[1])
+            
+            plot_curves(epoch_losses,val_ndcg_list,val_hr_list,test_ndcg_list,test_hr_list)
+            
 
             if t_valid[0] > best_val_ndcg or t_valid[1] > best_val_hr or t_test[0] > best_test_ndcg or t_test[1] > best_test_hr:
                 best_val_ndcg = max(t_valid[0], best_val_ndcg)
@@ -152,4 +191,7 @@ if __name__ == '__main__':
     
     f.close()
     sampler.close()
+    
+    
+    
     print("Done")

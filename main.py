@@ -26,6 +26,7 @@ parser.add_argument('--l2_emb', default=0.0, type=float)
 parser.add_argument('--device', default='cuda', type=str)
 parser.add_argument('--inference_only', default=False, type=str2bool)
 parser.add_argument('--state_dict_path', default=None, type=str)
+parser.add_argument('--model', default='SASRec', type=str,choices=['SASRec','GRURec','LMURec'],help='Choose the model to train')
 
 args = parser.parse_args()
 if not os.path.isdir(args.dataset + '_' + args.train_dir):
@@ -43,7 +44,7 @@ def plot_curves(train_losses,val_ndcg_list,val_hr_list,test_ndcg_list,test_hr_li
     plt.ylabel('Loss')
     plt.title('Training loss')
     plt.legend()
-    plt.savefig(f'plots/{args.dataset}_training_loss.png')
+    plt.savefig(f'plots/{args.model}_{args.dataset}_training_loss.png')
 
     # Plotting the validation and test metrics (NDCG@10 and HR@10)
     plt.figure(figsize=(10, 5))
@@ -55,7 +56,7 @@ def plot_curves(train_losses,val_ndcg_list,val_hr_list,test_ndcg_list,test_hr_li
     plt.ylabel('Metrics')
     plt.title('Validation and Test Metrics')
     plt.legend()
-    plt.savefig(f'plots/{args.dataset}_metrics.png')
+    plt.savefig(f'plots/{args.model}_{args.dataset}_metrics.png')
 
 if __name__ == '__main__':
 
@@ -76,8 +77,17 @@ if __name__ == '__main__':
     f.write('epoch (val_ndcg, val_hr) (test_ndcg, test_hr)\n')
     
     sampler = WarpSampler(user_train, usernum, itemnum, batch_size=args.batch_size, maxlen=args.maxlen, n_workers=3)
+    if args.model == 'SASRec':
+        model = SASRec(usernum, itemnum, args).to(args.device)
+        
+    elif args.model == 'GRURec':
+        model = GRURec(usernum, itemnum, args).to(args.device)
+        
+    elif args.model == 'LMURec':
+        model = LMURec(usernum, itemnum, args).to(args.device)
+        
     # model = SASRec(usernum, itemnum, args).to(args.device) # no ReLU activation in original SASRec implementation?
-    model = GRURec(usernum, itemnum, args).to(args.device)
+    # model = GRURec(usernum, itemnum, args).to(args.device)
     # model = LMURec(usernum, itemnum, args).to(args.device)
     
     

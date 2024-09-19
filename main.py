@@ -47,11 +47,19 @@ def plot_curves(train_losses,val_ndcg_list,val_hr_list,test_ndcg_list,test_hr_li
     plt.savefig(f'plots/{args.model}_{args.dataset}_training_loss.png')
 
     # Plotting the validation and test metrics (NDCG@10 and HR@10)
+    epochs = range(20, (len(val_ndcg_list) + 1) * 20, 20)  # epochs in steps of 20
+    
     plt.figure(figsize=(10, 5))
-    plt.plot(val_ndcg_list, label='Validation NDCG@10',marker='o')
-    plt.plot(val_hr_list, label='Validation HR@10',marker='o')
-    plt.plot(test_ndcg_list, label='Test NDCG@10',marker='x')
-    plt.plot(test_hr_list, label='Test HR@10',marker='x')
+    plt.plot(epochs, val_ndcg_list, label='Validation NDCG@10', marker='o')
+    plt.plot(epochs, val_hr_list, label='Validation HR@10', marker='o')
+    plt.plot(epochs, test_ndcg_list, label='Test NDCG@10', marker='x')
+    plt.plot(epochs, test_hr_list, label='Test HR@10', marker='x')
+    
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(val_ndcg_list, label='Validation NDCG@10',marker='o')
+    # plt.plot(val_hr_list, label='Validation HR@10',marker='o')
+    # plt.plot(test_ndcg_list, label='Test NDCG@10',marker='x')
+    # plt.plot(test_hr_list, label='Test HR@10',marker='x')
     plt.xlabel('Epochs')
     plt.ylabel('Metrics')
     plt.title('Validation and Test Metrics')
@@ -88,7 +96,7 @@ if __name__ == '__main__':
         
     # model = SASRec(usernum, itemnum, args).to(args.device) # no ReLU activation in original SASRec implementation?
     # model = GRURec(usernum, itemnum, args).to(args.device)
-    # model = LMURec(usernum, itemnum, args).to(args.device)
+    # model = LMURec(usernum, itemnum, args).to(args.device) 
     
     
     user_embedding_matrix = model.user_emb.weight
